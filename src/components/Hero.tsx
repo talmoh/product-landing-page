@@ -6,7 +6,7 @@ export default function Hero() {
     <section id="presentation" className="presentation">
       <div style={{ width: '100%', height: 420, position: 'relative', borderRadius: 8, overflow: 'hidden' }}>
         <Image
-          src="/images/presentation_oz.png"
+          src="/images/presentation_oz.jpg"
           alt="présentation oz"
           width={1600}
           height={600}
