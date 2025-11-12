@@ -1,7 +1,9 @@
 'use client'
 import React, { useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
 
 type Wilaya = { id: string; label: string; cost: number }
+type Commune = { id: string; label: string }
 
 const WILAYAS: Wilaya[] = [
   { id: '1', label: '1 - Adrar', cost: 1050 }, { id: '2', label: '2 - Chlef', cost: 600 },
@@ -37,50 +39,61 @@ const PRODUCT_PRICES: Record<string, number> = {
   'Produit 3': 2999
 }
 
-export default function OrderForm({ defaultProduct }: { defaultProduct?: string }) {
+export default function OrderForm({ defaultProduct = 'Produit 1' }: { defaultProduct?: string }) {
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [address, setAddress] = useState('')
   /*const [city, setCity] = useState('')*/
   const [postalCode, setPostalCode] = useState('')
-  const [wilayaId, setWilayaId] = useState<string>('')
-  const [commune, setCommune] = useState<string>('')
-  const [product, setProduct] = useState(defaultProduct ?? 'Produit 1')
+  const [wilayaId, setWilayaId] = useState('')
+  const [commune, setCommune] = useState('')
+  const [communes, setCommunes] = useState<Commune[]>([])
+  const [product, setProduct] = useState(defaultProduct)
   const [quantity, setQuantity] = useState(1)
   const [weight, setWeight] = useState<number | ''>('')
   const [codAmount, setCodAmount] = useState<number | ''>('')
   const [notes, setNotes] = useState('')
-  const [loading, setLoading] = useState(false)
   const [deliveryCost, setDeliveryCost] = useState<number>(0)
+  const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
 
-  // prix produit courant
   const productPrice = useMemo(() => PRODUCT_PRICES[product] ?? 0, [product])
-
-  // calcul totals
   const subtotal = productPrice * quantity
-  const total = subtotal + deliveryCost + (Number(codAmount || 0))
+  const total = subtotal + deliveryCost + Number(codAmount || 0)
 
-  // quand on change la wilaya, appeler l'API de calcul
+  // fetch communes when wilaya changes
   useEffect(() => {
+    setCommunes([])
+    setCommune('')
     if (!wilayaId) {
       setDeliveryCost(0)
       return
     }
 
+    // fetch delivery cost and communes concurrently
     let mounted = true
     ;(async () => {
       try {
-        const res = await fetch('/api/calculate-delivery', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ wilayaId })
-        })
-        const data = await res.json()
-        if (res.ok && mounted) setDeliveryCost(Number(data.cost) || 0)
+        const [dRes, cRes] = await Promise.all([
+          fetch('/api/calculate-delivery', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ wilayaId }) }),
+          fetch('/api/communes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ wilayaId }) })
+        ])
+        if (!mounted) return
+        if (dRes.ok) {
+          const d = await dRes.json()
+          setDeliveryCost(Number(d.cost) || 0)
+        } else setDeliveryCost(0)
+
+        if (cRes.ok) {
+          const c = await cRes.json()
+          setCommunes(Array.isArray(c?.communes) ? c.communes : [])
+        } else setCommunes([])
       } catch {
-        if (mounted) setDeliveryCost(0)
+        if (mounted) {
+          setDeliveryCost(0)
+          setCommunes([])
+        }
       }
     })()
 
@@ -97,24 +110,13 @@ export default function OrderForm({ defaultProduct }: { defaultProduct?: string 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName,
-          phone,
-          email,
-          address,
-          /*city,*/
-          postalCode,
-          wilayaId,
-          commune,
-          product,
-          productPrice,
-          quantity,
+          fullName, phone, email, address, /*city,*/ postalCode,
+          wilayaId, commune, product, productPrice, quantity,
           weight: weight === '' ? undefined : Number(weight),
           codAmount: codAmount === '' ? 0 : Number(codAmount),
-          deliveryCost,
-          notes
+          deliveryCost, notes
         })
       })
-
       const data = await res.json()
       if (!res.ok) throw new Error(data?.message || 'Erreur serveur')
       setResult({ success: true, data })
@@ -126,99 +128,132 @@ export default function OrderForm({ defaultProduct }: { defaultProduct?: string 
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 920, margin: '0 auto', display: 'grid', gap: 12 }}>
-      <div style={{ display: 'flex', gap: 12 }}>
-        <input required placeholder="Nom complet" value={fullName} onChange={e => setFullName(e.target.value)} />
-        <input required placeholder="Téléphone" value={phone} onChange={e => setPhone(e.target.value)} />
-      </div>
+    <form onSubmit={handleSubmit} className="card" style={{ maxWidth: 1100, margin: '0 auto' }}>
+      <div className="kicker">Commande</div>
+      <div className="grid-2">
+        <div>
+          <div className="product-thumb">
+            <Image src={`/images/product1.jpg`} alt={product} width={800} height={600} style={{ objectFit: 'cover' }} />
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <h3 style={{ marginBottom: 6 }}>{product}</h3>
+            <div className="helper">Prix unitaire : <strong>{productPrice.toLocaleString()} DZD</strong></div>
+          </div>
+        </div>
 
-      <div style={{ display: 'flex', gap: 12 }}>
-        <input type="email" placeholder="Email (optionnel)" value={email} onChange={e => setEmail(e.target.value)} />
-        {/*<input placeholder="Ville" value={city} onChange={e => setCity(e.target.value)} /> */}
-        <div style={{ minWidth: 220 }}>
-          <select value={wilayaId} onChange={e => setWilayaId(e.target.value)} required>
-            <option value="">Wilaya</option>
-            {WILAYAS.map(w => <option key={w.id} value={w.id}>{w.label}</option>)}
-          </select>
+        <div>
+          <div style={{ display: 'grid', gap: 10 }}>
+            <div>
+              <label className="field-label">Nom complet</label>
+              <input className="input" required value={fullName} onChange={e => setFullName(e.target.value)} />
+            </div>
+
+            <div className="form-row">
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Téléphone</label>
+                <input className="input" required value={phone} onChange={e => setPhone(e.target.value)} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Email</label>
+                <input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="form-grid">
+              <div>
+                <label className="field-label">Wilaya</label>
+                <select className="input" value={wilayaId} onChange={e => setWilayaId(e.target.value)} required>
+                  <option value="">Sélectionner la wilaya</option>
+                  {WILAYAS.map(w => <option key={w.id} value={w.id}>{w.label}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="field-label">Commune</label>
+                <select className="input" value={commune} onChange={e => setCommune(e.target.value)} required>
+                  <option value="">{communes.length ? 'Sélectionner la commune' : 'Choisir la wilaya'}</option>
+                  {communes.map(c => <option key={c.id} value={c.label}>{c.label}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="field-label">Adresse complète</label>
+              <input className="input" required value={address} onChange={e => setAddress(e.target.value)} />
+            </div>
+
+            <div className="form-row">
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Ville</label>
+                {/*<input className="input" value={city} onChange={e => setCity(e.target.value)} />*/}
+              </div>
+              <div style={{ width: 160 }}>
+                <label className="field-label">Code postal</label>
+                <input className="input" value={postalCode} onChange={e => setPostalCode(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Quantité</label>
+                <input className="input" type="number" min={1} value={quantity} onChange={e => setQuantity(Number(e.target.value))} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Poids (kg) (optionnel)</label>
+                <input className="input" value={weight} onChange={e => setWeight(e.target.value === '' ? '' : Number(e.target.value))} />
+              </div>
+            </div>
+
+            <div>
+              <label className="field-label">Montant COD (DA) (optionnel)</label>
+              <input className="input" value={codAmount} onChange={e => setCodAmount(e.target.value === '' ? '' : Number(e.target.value))} />
+            </div>
+
+            <div>
+              <label className="field-label">Remarques</label>
+              <textarea className="input" rows={3} value={notes} onChange={e => setNotes(e.target.value)} />
+            </div>
+          </div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 12 }}>
-        <select value={commune} onChange={e => setCommune(e.target.value)}>
-          <option value="">Commune (optionnel)</option>
-          {/* remplir dynamiquement si tu as la liste */}
-        </select>
-        <input required placeholder="Adresse complète (rue, bâtiment)" value={address} onChange={e => setAddress(e.target.value)} />
-        <input placeholder="Code postal" value={postalCode} onChange={e => setPostalCode(e.target.value)} />
-      </div>
+      {/* order summary */}
+      <div className="order-summary" style={{ marginTop: 14 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div><strong>Résumé de la commande</strong></div>
+          <div className="helper">Prix en DZD</div>
+        </div>
 
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-        <label style={{ minWidth: 90 }}>Produit</label>
-        <select value={product} onChange={e => setProduct(e.target.value)}>
-          <option>Produit 1</option>
-          <option>Produit 2</option>
-          <option>Produit 3</option>
-        </select>
+        <div className="order-row"><div>Produit</div><div>{product} × {quantity}</div></div>
+        <div className="order-row"><div>Sous-total</div><div>{subtotal.toLocaleString()} DZD</div></div>
+        <div className="order-row"><div>Livraison</div><div>{deliveryCost.toLocaleString()} DZD</div></div>
+        <div className="order-row"><div>Montant COD</div><div>{Number(codAmount || 0).toLocaleString()} DZD</div></div>
+        <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', marginTop: 8, paddingTop: 8 }} className="order-row">
+          <div style={{ fontWeight: 900 }}>TOTAL</div>
+          <div style={{ fontWeight: 900 }}>{total.toLocaleString()} DZD</div>
+        </div>
 
-        <label style={{ minWidth: 70, marginLeft: 12 }}>Quantité</label>
-        <input type="number" min={1} value={quantity} onChange={e => setQuantity(Number(e.target.value))} style={{ width: 80 }} />
-      </div>
-
-      <div style={{ display: 'flex', gap: 12 }}>
-        <input placeholder="Poids (kg) (optionnel)" value={weight} onChange={e => setWeight(e.target.value === '' ? '' : Number(e.target.value))} />
-        <input placeholder="Montant COD (DA) (optionnel)" value={codAmount} onChange={e => setCodAmount(e.target.value === '' ? '' : Number(e.target.value))} />
-      </div>
-
-      <textarea placeholder="Remarques (ex : étage, précisions livraison)" value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
-
-      {/* Order Summary */}
-      <div className="card" style={{ padding: 16, marginTop: 8 }}>
-        <h4>Résumé de commande</h4>
-        <table style={{ width: '100%', marginTop: 8 }}>
-          <tbody>
-            <tr>
-              <th style={{ textAlign: 'left' }}>Produit</th>
-              <td style={{ textAlign: 'right' }}>{product} × {quantity}</td>
-            </tr>
-            <tr>
-              <th style={{ textAlign: 'left' }}>Sous-total</th>
-              <td style={{ textAlign: 'right' }}>{subtotal.toLocaleString()} DZD</td>
-            </tr>
-            <tr>
-              <th style={{ textAlign: 'left' }}>Livraison</th>
-              <td style={{ textAlign: 'right' }}>{deliveryCost.toLocaleString()} DZD</td>
-            </tr>
-            <tr>
-              <th style={{ textAlign: 'left' }}>Montant COD</th>
-              <td style={{ textAlign: 'right' }}>{Number(codAmount || 0).toLocaleString()} DZD</td>
-            </tr>
-            <tr style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-              <th style={{ textAlign: 'left', paddingTop: 8 }}>TOTAL</th>
-              <td style={{ textAlign: 'right', fontWeight: 800, paddingTop: 8 }}>{total.toLocaleString()} DZD</td>
-            </tr>
-          </tbody>
-        </table>
-        <div style={{ marginTop: 12, display: 'flex', gap: 12 }}>
-          <button type="submit" className="btn" disabled={loading}>{loading ? 'Envoi...' : 'Acheter'}</button>
-          <button type="button" className="btn-outline" onClick={() => {
+        <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+          <button className="btn" type="submit" disabled={loading}>{loading ? 'Envoi...' : 'Passer la commande'}</button>
+          <button type="button" className="btn secondary" onClick={() => {
+            // reset
             setFullName(''); setPhone(''); setEmail(''); setAddress(''); /*setCity('');*/ setPostalCode('');
-            setWilayaId(''); setCommune(''); setProduct('Produit 1'); setQuantity(1); setWeight(''); setCodAmount(''); setNotes(''); setDeliveryCost(0)
+            setWilayaId(''); setCommune(''); setProduct(defaultProduct); setQuantity(1); setWeight(''); setCodAmount(''); setNotes(''); setDeliveryCost(0)
           }}>Annuler</button>
         </div>
-      </div>
 
-      {result && (
-        <div style={{ marginTop: 8, color: result.success ? 'green' : 'crimson' }}>
-          {result.success ? (
-            <>
-              Commande créée. Référence livraison : <strong>{result.data?.shipmentId ?? '—'}</strong>
-              <pre style={{ whiteSpace: 'pre-wrap', fontSize: 12, marginTop: 6 }}>{JSON.stringify(result.data?.providerResponse ?? result.data, null, 2)}</pre>
-            </>
-          ) : (
-            <>{result.message}</>
-          )}
-        </div>
-      )}
+        {result && (
+          <div style={{ marginTop: 10, color: result.success ? 'green' : 'crimson' }}>
+            {result.success ? (
+              <>
+                Commande créée. Référence livraison : <strong>{result.data?.shipmentId ?? '—'}</strong>
+              </>
+            ) : (
+              <>{result.message}</>
+            )}
+          </div>
+        )}
+      </div>
     </form>
   )
 }

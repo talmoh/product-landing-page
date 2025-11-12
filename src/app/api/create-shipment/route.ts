@@ -3,14 +3,13 @@ import { NextResponse } from 'next/server'
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const required = ['fullName', 'phone', 'address', /*'city',*/ 'product', 'quantity', 'deliveryCost', 'wilayaId']
+    const required = ['fullName', 'phone', 'address', /*'city',*/ 'product', 'quantity', 'deliveryCost', 'wilayaId', 'commune']
     for (const k of required) {
       if (body[k] === undefined || body[k] === '') {
         return NextResponse.json({ message: `${k} manquant` }, { status: 400 })
       }
     }
 
-    // Construire payload Yalidine (adapte champs si nécessaire selon la doc)
     const payload = {
       sender: { name: process.env.MY_SHOP_NAME ?? 'OZSTREETWEAR' },
       recipient: {
@@ -20,11 +19,10 @@ export async function POST(req: Request) {
         address: body.address,
         /*city: body.city,*/
         postal_code: body.postalCode || undefined,
-        wilaya_id: body.wilayaId
+        wilaya_id: body.wilayaId,
+        commune: body.commune
       },
-      items: [
-        { name: body.product, quantity: Number(body.quantity) || 1, price: body.productPrice || undefined }
-      ],
+      items: [{ name: body.product, quantity: Number(body.quantity) || 1, price: body.productPrice || undefined }],
       delivery_cost: Number(body.deliveryCost) || 0,
       weight: body.weight || undefined,
       cod_amount: body.codAmount || 0,
@@ -41,10 +39,7 @@ export async function POST(req: Request) {
 
     const res = await fetch(YALIDINE_API_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        [AUTH_HEADER]: `Bearer ${YALIDINE_API_KEY}`
-      },
+      headers: { 'Content-Type': 'application/json', [AUTH_HEADER]: `Bearer ${YALIDINE_API_KEY}` },
       body: JSON.stringify(payload)
     })
 
