@@ -34,7 +34,7 @@ export default function ProductCarousel() {
         ))}
       </Swiper>
       <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 12 }}>
-        <a className="btn" href="#contact">Commander</a>
+        <a className="btn" href="/order">Commander</a>
         <a className="btn" href="#">Ajouter au panier</a>
       </div>
     </div>
