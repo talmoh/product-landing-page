@@ -3,11 +3,36 @@ import { NextResponse } from 'next/server'
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const required = ['fullName', 'phone', 'address', /*'city',*/ 'product', 'quantity', 'deliveryCost', 'wilayaId', 'commune']
+
+    // champs obligatoires généraux
+    const required = ['fullName', 'phone', 'address', 'wilayaId', 'commune']
     for (const k of required) {
       if (body[k] === undefined || body[k] === '') {
         return NextResponse.json({ message: `${k} manquant` }, { status: 400 })
       }
+    }
+
+    // deliveryCost peut être 0 mais doit être défini
+    if (body.deliveryCost === undefined) {
+      return NextResponse.json({ message: `deliveryCost manquant` }, { status: 400 })
+    }
+
+    // construire la liste d'items : soit body.items (préféré), soit fallback product+quantity
+    let items: { name: string; quantity: number; price?: number }[] = []
+    if (Array.isArray(body.items) && body.items.length > 0) {
+      items = body.items.map((it: any) => ({
+        name: String(it.name || it.title || 'Produit'),
+        quantity: Number(it.quantity || it.qty || 1),
+        price: it.price !== undefined ? Number(it.price) : undefined
+      }))
+    } else if (body.product && body.quantity) {
+      items = [{
+        name: String(body.product),
+        quantity: Number(body.quantity) || 1,
+        price: body.productPrice !== undefined ? Number(body.productPrice) : undefined
+      }]
+    } else {
+      return NextResponse.json({ message: 'Produit manquant (items ou product+quantity requis)' }, { status: 400 })
     }
 
     const payload = {
@@ -22,7 +47,7 @@ export async function POST(req: Request) {
         wilaya_id: body.wilayaId,
         commune: body.commune
       },
-      items: [{ name: body.product, quantity: Number(body.quantity) || 1, price: body.productPrice || undefined }],
+      items,
       delivery_cost: Number(body.deliveryCost) || 0,
       weight: body.weight || undefined,
       cod_amount: body.codAmount || 0,

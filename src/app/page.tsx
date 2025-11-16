@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Navbar from '../components/Navbar'
 import Hero from '../components/Hero'
 import ProductCarousel from '../components/ProductCarousel'
 import Footer from '../components/Footer'
@@ -7,7 +6,6 @@ import Footer from '../components/Footer'
 export default function Home() {
   return (
     <>
-      <Navbar />
       <main>
         <Hero />
         <section id="product" className="container mt-5">
