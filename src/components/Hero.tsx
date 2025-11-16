@@ -6,7 +6,7 @@ export default function Hero() {
     <section id="presentation" className="presentation">
       <div style={{ width: '100%', height: 420, position: 'relative', borderRadius: 8, overflow: 'hidden' }}>
         <video
-          src="/images/OZSTREETWEAR+.mp4"
+          src="/images/OZSTREETWEAR.mp4"
           width={1600}
           height={600}
           style={{ borderRadius: 8, width: '100%', height: '100%', objectFit: 'cover' }}
