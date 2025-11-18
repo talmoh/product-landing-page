@@ -103,8 +103,10 @@ export default function OrderForm({ defaultProduct = 'Produit 1' }: { defaultPro
 
         if (cRes.ok) {
           const c = await cRes.json()
+          console.log('Réponse communes pour wilayaId', wilayaId, ':', c)
           setCommunes(Array.isArray(c?.communes) ? c.communes : [])
         } else {
+          console.error('Erreur communes:', await cRes.text())
           setCommunes([])
         }
       } catch {
