@@ -1,6 +1,7 @@
 'use client'
-import React from 'react'
+import React, { useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Navigation, Autoplay, Pagination } from 'swiper/modules'
 import 'swiper/css'
@@ -15,9 +16,27 @@ const IMAGES = [
 ]
 
 const PRODUCT_PRICES = [3999, 4999, 2999]
+const PRODUCT_NAMES = ['Produit 1', 'Produit 2', 'Produit 3']
 
 export default function ProductCarousel() {
   const { addToCart } = useCart()
+  const [activeIndex, setActiveIndex] = useState(0)
+
+  const handleSlideChange = (swiper: any) => {
+    setActiveIndex(swiper.activeIndex)
+  }
+
+  const getCurrentProduct = () => ({
+    id: `product-${activeIndex + 1}`,
+    name: PRODUCT_NAMES[activeIndex],
+    price: PRODUCT_PRICES[activeIndex],
+    img: IMAGES[activeIndex]
+  })
+
+  const handleAddToCart = () => {
+    const product = getCurrentProduct()
+    addToCart({ ...product, qty: 1 })
+  }
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
@@ -27,33 +46,40 @@ export default function ProductCarousel() {
         slidesPerView={1}
         navigation
         pagination={{ clickable: true }}
-        autoplay={{ delay: 3500 }}
+        autoplay={{ delay: 3500, disableOnInteraction: true }}
+        onSlideChange={handleSlideChange}
+        onInit={(swiper) => setActiveIndex(swiper.activeIndex)}
         style={{ paddingBottom: 20 }}
       >
         {IMAGES.map((src, i) => (
           <SwiperSlide key={i}>
             <div style={{ width: '100%', height: 420, position: 'relative', borderRadius: 8, overflow: 'hidden' }}>
-              <Image src={src} alt={`Produit ${i + 1}`} fill style={{ objectFit: 'cover' }} />
+              <Image src={src} alt={PRODUCT_NAMES[i]} fill style={{ objectFit: 'cover' }} />
             </div>
           </SwiperSlide>
         ))}
       </Swiper>
 
+      {/* Affichage du produit actif en dehors du swiper */}
+      <div style={{ textAlign: 'center', marginTop: 12 }}>
+        <h3>{PRODUCT_NAMES[activeIndex]}</h3>
+        <div style={{ fontSize: 18, fontWeight: 800, color: '#FFD400' }}>
+          {PRODUCT_PRICES[activeIndex].toLocaleString()} DZD
+        </div>
+      </div>
+
       <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 12 }}>
-        <a className="btn" href="/order">Commander</a>
+        <Link 
+          href={`/order?product=${encodeURIComponent(PRODUCT_NAMES[activeIndex])}&price=${PRODUCT_PRICES[activeIndex]}&id=product-${activeIndex + 1}`}
+          className="btn"
+        >
+          Commander
+        </Link>
 
         <button
           type="button"
           className="btn"
-          onClick={() =>
-            addToCart({
-              id: `product-${1}`, // par défaut on ajoute le 1er produit visible, tu peux adapter
-              name: `Produit 1`,
-              price: PRODUCT_PRICES[0],
-              qty: 1,
-              img: IMAGES[0]
-            })
-          }
+          onClick={handleAddToCart}
         >
           Ajouter au panier
         </button>

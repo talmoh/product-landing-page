@@ -9,7 +9,7 @@ export default function Home() {
       <main>
         <Hero />
         <section id="product" className="container mt-5">
-          <h1 className="text-center mb-4">Présentation du produit</h1>
+          <center><h1 className="text-center mb-4">Nos Produits</h1></center>
           <ProductCarousel />
         </section>
 

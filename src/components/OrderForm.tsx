@@ -1,6 +1,7 @@
 'use client'
 import React, { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
+import { useSearchParams } from 'next/navigation'
 import { useCart } from '../context/CartContext'
 
 type Wilaya = { id: string; label: string; cost: number }
@@ -35,6 +36,12 @@ const WILAYAS: Wilaya[] = [
 
 export default function OrderForm({ defaultProduct = 'Produit 1' }: { defaultProduct?: string }) {
   const { cart, clearCart } = useCart()
+  const searchParams = useSearchParams()
+
+  // Lire les paramètres URL
+  const urlProduct = searchParams?.get('product')
+  const urlPrice = searchParams?.get('price') 
+  const urlId = searchParams?.get('id')
 
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
@@ -51,15 +58,24 @@ export default function OrderForm({ defaultProduct = 'Produit 1' }: { defaultPro
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
 
+  // Déterminer les items à commander : panier OU produit URL
   const items = useMemo(() => {
-    if (cart.length) return cart.map(i => ({ name: i.name, quantity: i.qty, price: i.price }))
-    return [{ name: defaultProduct, quantity: 1, price: 0 }]
-  }, [cart, defaultProduct])
+    if (cart.length > 0) {
+      // Priorité au panier s'il contient des items
+      return cart.map(i => ({ name: i.name, quantity: i.qty, price: i.price }))
+    } else if (urlProduct && urlPrice) {
+      // Sinon utiliser le produit venant de l'URL
+      return [{ name: urlProduct, quantity: 1, price: Number(urlPrice) }]
+    } else {
+      // Fallback sur le produit par défaut
+      return [{ name: defaultProduct, quantity: 1, price: 0 }]
+    }
+  }, [cart, defaultProduct, urlProduct, urlPrice])
 
   const subtotal = items.reduce((s, it) => s + (Number(it.price || 0) * Number(it.quantity || 0)), 0)
   const total = subtotal + deliveryCost + Number(codAmount || 0)
 
-  // when wilaya changes: fetch communes and delivery cost
+  // Calculer coût livraison et communes quand wilaya change
   useEffect(() => {
     if (!wilayaId) {
       setCommunes([])
@@ -139,23 +155,22 @@ export default function OrderForm({ defaultProduct = 'Produit 1' }: { defaultPro
         <input className="input" required placeholder="Téléphone" value={phone} onChange={e => setPhone(e.target.value)} />
       </div>
 
-      {/* summary when cart present */}
-      {cart.length > 0 && (
+      {/* Affichage des produits commandés */}
+      {(cart.length > 0 || (urlProduct && urlPrice)) && (
         <div className="card">
           <h4>Articles dans la commande</h4>
-          {cart.map(ci => (
-            <div key={ci.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: 8 }}>
-              <div style={{ width: 60, height: 50, position: 'relative' }}>
-                {ci.img ? <Image src={ci.img} alt={ci.name} fill style={{ objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', background: '#f4f4f4' }} />}
-              </div>
+          {items.map((item, idx) => (
+            <div key={`${item.name}-${idx}`} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: 8 }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 800 }}>{ci.name}</div>
-                <div className="helper">{ci.qty} × {(ci.price || 0).toLocaleString()} DZD</div>
+                <div style={{ fontWeight: 800 }}>{item.name}</div>
+                <div className="helper">{item.quantity} × {(item.price || 0).toLocaleString()} DZD</div>
               </div>
-              <div style={{ fontWeight: 800 }}>{(Number(ci.price || 0) * ci.qty).toLocaleString()} DZD</div>
+              <div style={{ fontWeight: 800 }}>{(Number(item.price || 0) * item.quantity).toLocaleString()} DZD</div>
             </div>
           ))}
-          <div style={{ textAlign: 'right', marginTop: 8, fontWeight: 800 }}>Sous-total: {subtotal.toLocaleString()} DZD</div>
+          <div style={{ textAlign: 'right', marginTop: 8, fontWeight: 800 }}>
+            Sous-total: {subtotal.toLocaleString()} DZD
+          </div>
         </div>
       )}
 
