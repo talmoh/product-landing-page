@@ -8,6 +8,7 @@ import 'swiper/css'
 import 'swiper/css/navigation'
 import 'swiper/css/pagination'
 import { useCart } from '../context/CartContext'
+import { track } from '@vercel/analytics'
 
 const IMAGES = [
   '/images/product1.jpg',
@@ -24,6 +25,12 @@ export default function ProductCarousel() {
 
   const handleSlideChange = (swiper: any) => {
     setActiveIndex(swiper.activeIndex)
+    // Track slide change
+    track('product_view', { 
+      product: PRODUCT_NAMES[swiper.activeIndex],
+      price: PRODUCT_PRICES[swiper.activeIndex],
+      position: swiper.activeIndex + 1
+    })
   }
 
   const getCurrentProduct = () => ({
@@ -35,7 +42,23 @@ export default function ProductCarousel() {
 
   const handleAddToCart = () => {
     const product = getCurrentProduct()
+    // Track add to cart event
+    track('add_to_cart', { 
+      product: product.name, 
+      price: product.price,
+      product_id: product.id 
+    })
     addToCart({ ...product, qty: 1 })
+  }
+
+  const handleOrderClick = () => {
+    const product = getCurrentProduct()
+    // Track order button click
+    track('start_checkout', { 
+      product: product.name, 
+      price: product.price,
+      product_id: product.id 
+    })
   }
 
   return (
@@ -72,6 +95,7 @@ export default function ProductCarousel() {
         <Link 
           href={`/order?product=${encodeURIComponent(PRODUCT_NAMES[activeIndex])}&price=${PRODUCT_PRICES[activeIndex]}&id=product-${activeIndex + 1}`}
           className="btn"
+          onClick={handleOrderClick}
         >
           Commander
         </Link>
