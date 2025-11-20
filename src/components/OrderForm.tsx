@@ -21,7 +21,7 @@ const WILAYAS: Wilaya[] = [
   { id: '21', label: '21 - Skikda', cost: 600 }, { id: '22', label: '22 - Sidi Bel Abbès', cost: 600 },
   { id: '23', label: '23 - Annaba', cost: 600 }, { id: '24', label: '24 - Guelma', cost: 600 },
   { id: '25', label: '25 - Constantine', cost: 600 }, { id: '26', label: '26 - Médéa', cost: 600 },
-  { id: '27', label: '27 - Mostaganem', cost: 600 }, { id: '28', label: '28 - M/Sila', cost: 600 },
+  { id: '27', label: '27 - Mostaganem', cost: 600 }, { id: '28', label: '28 - MSila', cost: 600 },
   { id: '29', label: '29 - Mascara', cost: 600 }, { id: '30', label: '30 - Ouargla', cost: 750 },
   { id: '31', label: '31 - Oran', cost: 600 }, { id: '32', label: '32 - El Bayadh', cost: 1050 },
   { id: '33', label: '33 - Illizi', cost: 1250 }, { id: '34', label: '34 - Bordj Bou Arreridj', cost: 600 },
@@ -32,11 +32,11 @@ const WILAYAS: Wilaya[] = [
   { id: '43', label: '43 - Mila', cost: 600 }, { id: '44', label: '44 - Aïn Defla', cost: 600 },
   { id: '45', label: '45 - Naâma', cost: 1050 }, { id: '46', label: '46 - Aïn Témouchent', cost: 600 },
   { id: '47', label: '47 - Ghardaïa', cost: 750 }, { id: '48', label: '48 - Relizane', cost: 600 },  
-  { id: '49', label: '49 - El M/ghair', cost: 600 }, { id: '50', label: '50 - El Menia', cost: 600 }, 
-  { id: '51', label: '51 - Ouled Djellal', cost: 600 }, { id: '52', label: '52 - Bordj Badji Mokhtar', cost: 600 }, 
-  { id: '53', label: '53 - Béni Abbès', cost: 600 }, { id: '54', label: '54 - Timimoun', cost: 600 },
+  { id: '49', label: '49 - Timimoun', cost: 600 }, { id: '50', label: '50 - Bordj Badji Mokhtar', cost: 600 }, 
+  { id: '51', label: '51 - Ouled Djellal', cost: 600 }, { id: '52', label: '52 - Béni Abbès', cost: 600 }, 
+  { id: '53', label: '53 - In Salah', cost: 600 }, { id: '54', label: '54 - In Guezzam', cost: 600 },
   { id: '55', label: '55 - Touggourt', cost: 600 }, { id: '56', label: '56 - Djanet', cost: 600 },
-  { id: '57', label: '57 - In Salah', cost: 600 }, { id: '58', label: '58 - In Guezzam', cost: 600 }
+  { id: '57', label: "57 - El M'ghair", cost: 600 }, { id: '58', label: '58 - El Menia', cost: 600 }
 ]
 
 export default function OrderForm({ defaultProduct = 'Produit 1' }: { defaultProduct?: string }) {
