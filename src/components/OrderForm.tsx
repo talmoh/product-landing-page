@@ -31,7 +31,12 @@ const WILAYAS: Wilaya[] = [
   { id: '41', label: '41 - Souk Ahras', cost: 600 }, { id: '42', label: '42 - Tipaza', cost: 600 },
   { id: '43', label: '43 - Mila', cost: 600 }, { id: '44', label: '44 - Aïn Defla', cost: 600 },
   { id: '45', label: '45 - Naâma', cost: 1050 }, { id: '46', label: '46 - Aïn Témouchent', cost: 600 },
-  { id: '47', label: '47 - Ghardaïa', cost: 750 }, { id: '48', label: '48 - Relizane', cost: 600 }
+  { id: '47', label: '47 - Ghardaïa', cost: 750 }, { id: '48', label: '48 - Relizane', cost: 600 },  
+  { id: '49', label: '49 - El M/ghair', cost: 600 }, { id: '50', label: '50 - El Menia', cost: 600 }, 
+  { id: '51', label: '51 - Ouled Djellal', cost: 600 }, { id: '52', label: '52 - Bordj Badji Mokhtar', cost: 600 }, 
+  { id: '53', label: '53 - Béni Abbès', cost: 600 }, { id: '54', label: '54 - Timimoun', cost: 600 },
+  { id: '55', label: '55 - Touggourt', cost: 600 }, { id: '56', label: '56 - Djanet', cost: 600 },
+  { id: '57', label: '57 - In Salah', cost: 600 }, { id: '58', label: '58 - In Guezzam', cost: 600 }
 ]
 
 export default function OrderForm({ defaultProduct = 'Produit 1' }: { defaultProduct?: string }) {
